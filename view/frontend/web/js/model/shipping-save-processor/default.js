@@ -41,8 +41,8 @@ define(
         var getPayloadExtender = function() {
             var extenderRequest = new $.Deferred();
             require(
-                ['Magento_Checkout/js/model/shipping-save-processor/payload-extender'],
                 function (payloadExtender) {
+                    ['Magento_Checkout/js/model/shipping-save-processor/payload-extender'],
                     extenderRequest.resolve(payloadExtender);
                 }, function (err) {
                     extenderRequest.reject(err);
