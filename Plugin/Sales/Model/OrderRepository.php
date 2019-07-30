@@ -232,8 +232,9 @@ class OrderRepository
      */
     private function isModuleEnabled(OrderInterface $order)
     {
-        $storeId = $order->getStoreId();
-        $address = $order->getShippingAddress();
+        $storeId = (int)$order->getStoreId();
+        /** @var \Magento\Sales\Model\Order\Address $address */
+        $address = (int)$order->getIsVirtual() ? $order->getBillingAddress() : $order->getShippingAddress();
 
         return $this->config->isModuleEnabled($storeId)
             && $this->config->getTaxMode($storeId) != Config::TAX_MODE_NO_ESTIMATE_OR_SUBMIT

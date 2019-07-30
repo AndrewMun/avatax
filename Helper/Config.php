@@ -26,6 +26,7 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use Magento\Framework\App\State;
 use Magento\Tax\Api\TaxClassRepositoryInterface;
+use Magento\Framework\DataObject;
 
 /**
  * AvaTax Config model
@@ -398,29 +399,32 @@ class Config extends AbstractHelper
     /**
      * Determine whether address is taxable, based on either country or region
      *
-     * @param \Magento\Framework\DataObject $address
+     * @param DataObject|null $address
      * @param $storeId
      * @return bool
      */
-    public function isAddressTaxable(\Magento\Framework\DataObject $address, $storeId)
+    public function isAddressTaxable(DataObject $address, $storeId)
     {
-        $isTaxable = true;
-        // Filtering just by country (not region)
-        if (!$this->getFilterTaxByRegion($storeId)) {
-            $countryFilters = explode(',', $this->getTaxCalculationCountriesEnabled($storeId));
-            $countryId = $address->getCountryId();
-            if (!in_array($countryId, $countryFilters)) {
-                $isTaxable = false;
+        if ($address) {
+            $isTaxable = true;
+            // Filtering just by country (not region)
+            if (!$this->getFilterTaxByRegion($storeId)) {
+                $countryFilters = explode(',', $this->getTaxCalculationCountriesEnabled($storeId));
+                $countryId = $address->getCountryId();
+                if (!in_array($countryId, $countryFilters)) {
+                    $isTaxable = false;
+                }
+                // Filtering by region within countries
+            } else {
+                $regionFilters = explode(',', $this->getRegionFilterList($storeId));
+                $entityId = $address->getRegionId() ?: $address->getCountryId();
+                if (!in_array($entityId, $regionFilters)) {
+                    $isTaxable = false;
+                }
             }
-        // Filtering by region within countries
-        } else {
-            $regionFilters = explode(',', $this->getRegionFilterList($storeId));
-            $entityId = $address->getRegionId() ?: $address->getCountryId();
-            if (!in_array($entityId, $regionFilters)) {
-                $isTaxable = false;
-            }
+            return $isTaxable;
         }
-        return $isTaxable;
+        return false;
     }
 
     /**
