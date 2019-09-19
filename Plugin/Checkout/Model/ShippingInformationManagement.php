@@ -235,6 +235,7 @@ class ShippingInformationManagement
             } else {
                 // Update the shipping address
                 $addressInformation->setShippingAddress($quoteAddress);
+                $addressInformation->setBillingAddress($quoteAddress);
             }
         } catch (\Exception $e) {
             // There may be scenarios in which the above address updating may fail, in which case we should just do

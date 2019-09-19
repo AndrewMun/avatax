@@ -26,6 +26,9 @@ var config = {
         mixins: {
             'Magento_Checkout/js/model/shipping-save-processor/default': {
                 'ClassyLlama_AvaTax/js/model/shipping-save-processor/default': true
+            },
+            'Magento_Checkout/js/model/place-order': {
+                'ClassyLlama_AvaTax/js/model/place-order-mixin': true
             }
         }
     }
