@@ -15,36 +15,79 @@
 
 namespace ClassyLlama\AvaTax\Block\ViewModel;
 
-use ClassyLlama\AvaTax\Exception\AvataxConnectionException;
-use ClassyLlama\AvaTax\Helper\UrlSigner;
-use Magento\Customer\Controller\RegistryConstants;
-use Magento\Framework\DataObject;
-use Magento\Framework\DataObjectFactory;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\View\Element\Block\ArgumentInterface;
+use ClassyLlama\AvaTax\Framework\Interaction\Rest\Company as RestCompany;
+use ClassyLlama\AvaTax\Model\Logger\AvaTaxLogger;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
 
-class AccountAddExemptionZone implements \Magento\Framework\View\Element\Block\ArgumentInterface
+/**
+ * Class AccountAddExemptionZone
+ * @package ClassyLlama\AvaTax\Block\ViewModel
+ */
+class AccountAddExemptionZone implements ArgumentInterface
 {
+    /**#@+
+     * XML paths to configuration.
+     */
+    public const XML_PATH_CERTCAPTURE_AUTO_VALIDATION = 'tax/avatax_certificate_capture/disable_certcapture_auto_validation';
+    /**#@-*/
+
     /**
-     * @var \ClassyLlama\AvaTax\Framework\Interaction\Rest\Company
+     * @var RestCompany
      */
     protected $companyRest;
 
     /**
-     * @param \ClassyLlama\AvaTax\Framework\Interaction\Rest\Company $companyRest
+     * @var ScopeConfigInterface
      */
-    public function __construct(\ClassyLlama\AvaTax\Framework\Interaction\Rest\Company $companyRest)
+    private $scopeConfig;
+
+    /**
+     * @var AvaTaxLogger
+     */
+    private $avaTaxLogger;
+
+    /**
+     * AccountAddExemptionZone constructor.
+     * @param RestCompany $companyRest
+     * @param ScopeConfigInterface $scopeConfig
+     * @param AvaTaxLogger $avaTaxLogger
+     */
+    public function __construct(RestCompany $companyRest, ScopeConfigInterface $scopeConfig, AvaTaxLogger $avaTaxLogger)
     {
         $this->companyRest = $companyRest;
+        $this->scopeConfig = $scopeConfig;
+        $this->avaTaxLogger = $avaTaxLogger;
     }
 
     /**
      * @return false|string
-     * @throws AvataxConnectionException
      */
     public function getCertificateExposureZonesJsConfig()
     {
-        $zones = $this->companyRest->getCertificateExposureZones();
+        try {
+            $zones = $this->companyRest->getCertificateExposureZones();
+            return json_encode(array_map(function ($zone) {
+                return $zone->name;
+            }, $zones->value));
+        } catch (\Throwable $exception) {
+            $this->avaTaxLogger->error($exception->getMessage(), [
+                'class' => self::class,
+                'trace' => $exception->getTraceAsString()
+            ]);
+        }
+        return '';
+    }
 
-        return json_encode(array_map(function($zone) {return $zone->name;}, $zones->value));
+    /**
+     * @return string
+     */
+    public function isCertificatesAutoValidationDisabled(): string
+    {
+        return (string)(int)$this->scopeConfig->isSetFlag(
+            self::XML_PATH_CERTCAPTURE_AUTO_VALIDATION,
+            ScopeInterface::SCOPE_STORE
+        );
     }
 }

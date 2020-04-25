@@ -32,6 +32,9 @@ use Magento\Backend\Model\Auth\Session as AuthSession;
 use Magento\User\Model\User;
 use Magento\Framework\DataObject;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
+use ClassyLlama\AvaTax\Block\ViewModel\AccountAddExemptionZone;
 
 /**
  * Class TaxCertificates
@@ -102,7 +105,13 @@ class TaxCertificates extends AbstractComponent implements TabInterface
     private $logger;
 
     /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
+    /**
      * TaxCertificates constructor.
+     * @param ScopeConfigInterface $scopeConfig
      * @param LoggerInterface $logger
      * @param AuthSession $authSession
      * @param CertificatesList $certificatesList
@@ -118,6 +127,7 @@ class TaxCertificates extends AbstractComponent implements TabInterface
      * @param array $data
      */
     public function __construct(
+        ScopeConfigInterface $scopeConfig,
         LoggerInterface $logger,
         AuthSession $authSession,
         CertificatesList $certificatesList,
@@ -143,6 +153,7 @@ class TaxCertificates extends AbstractComponent implements TabInterface
         $this->certificatesList = $certificatesList;
         $this->authSession = $authSession;
         $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -259,6 +270,11 @@ class TaxCertificates extends AbstractComponent implements TabInterface
             ['form_key' => $this->sessionContext->getFormKey(), 'customer_id' => $config['customer_id']]
         );
         $config['available_exemption_zones'] = $this->getAvailableExemptionZones();
+        $config['certificates_auto_validation_disabled'] =
+            (string)(int)$this->scopeConfig->isSetFlag(
+                AccountAddExemptionZone::XML_PATH_CERTCAPTURE_AUTO_VALIDATION,
+                ScopeInterface::SCOPE_STORE
+            );
         $this->setData('config', $config);
 
         parent::prepare();
